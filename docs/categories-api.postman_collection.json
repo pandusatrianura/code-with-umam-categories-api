@@ -1,0 +1,158 @@
+{
+  "info": {
+    "_postman_id": "e1aa79d9-61d5-4521-9127-f81b790c0153",
+    "name": "Code With Umam - Categories API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "8814057"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/categories/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "categories",
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Display All Categories",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/categories",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Display Category By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/categories/6",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "categories",
+            "6"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create New Category",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Susu\",\n    \"description\": \"Kategori Susu\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/categories",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Existing Category",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Minuman\",\n    \"description\": \"Kategori Minuman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/v1/categories/9",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "categories",
+            "9"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete A Category",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/api/v1/categories/9",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "v1",
+            "categories",
+            "9"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
