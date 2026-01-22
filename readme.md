@@ -47,19 +47,19 @@ The application provides several API endpoints for the functionalities mentioned
    ```
    Health Check Endpoint:
    ```bash
-   curl --location 'http://localhost:8000/api/v1/categories/health'
+   curl --location '{Hosted API}/api/v1/categories/health'
    ```
    Display All Categories Endpoint:
    ```bash
-   curl --location 'http://localhost:8000/api/v1/categories'
+   curl --location '{Hosted API}/api/v1/categories'
    ```
    Display Category By ID Endpoint:
    ```bash
-   curl --location 'http://localhost:8000/api/v1/categories/6'
+   curl --location '{Hosted API}/api/v1/categories/6'
    ```
    Create New Category Endpoint:
    ```bash
-   curl --location 'http://localhost:8000/api/v1/categories' \
+   curl --location '{Hosted API}/api/v1/categories' \
    --header 'Content-Type: application/json' \
    --data '{
    "name": "Susu",
@@ -68,7 +68,7 @@ The application provides several API endpoints for the functionalities mentioned
    ```
    Update Existing Category Endpoint:
    ```bash
-   curl --location --request PUT 'http://localhost:8000/api/v1/categories/9' \
+   curl --location --request PUT '{Hosted API}/api/v1/categories/9' \
    --header 'Content-Type: application/json' \
    --data '{
    "name": "Minuman",
@@ -77,16 +77,16 @@ The application provides several API endpoints for the functionalities mentioned
    ```
    Delete Existing Category Endpoint:
    ```bash
-   curl --location --request DELETE 'http://localhost:8000/api/v1/categories/9'
+   curl --location --request DELETE '{Hosted API}/api/v1/categories/9'
    ```
 
-5. **Endpoint**:
+5. **Hosted API**:
 
    Localhost:
    ```bash
    http://localhost:8000
    ```
-   Raailway:
+   Railway:
    ```bash
-   To Be Announced
+   https://pandusatrianura-categories-api-production.up.railway.app
    ```
