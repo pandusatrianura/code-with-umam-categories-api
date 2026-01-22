@@ -38,7 +38,7 @@ The application provides several API endpoints for the functionalities mentioned
 
 3. **Run the Application**:
    ```bash
-   go run cmd/serve/main.go 
+   go run main.go 
    ```
 
 4. **Access the API**: Use tools like Postman or cURL to interact with the API endpoints.
