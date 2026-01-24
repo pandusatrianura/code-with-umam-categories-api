@@ -80,7 +80,14 @@ The application provides several API endpoints for the functionalities mentioned
    curl --location --request DELETE '{Hosted API}/api/v1/categories/9'
    ```
 
-5. **Hosted API**:
+5. API Reference:
+   The API reference is available at [docs/categories-api.postman_collection.json](docs/categories-api.postman_collection.json) or can accessed via web browser at 
+   ```bash
+   http://{Hosted API}/api/v1/categories/docs
+   ```
+
+
+6. **Hosted API**:
 
    Localhost:
    ```bash
@@ -90,3 +97,6 @@ The application provides several API endpoints for the functionalities mentioned
    ```bash
    https://pandusatrianura-categories-api-production.up.railway.app
    ```
+
+7. License:
+   This project is licensed under the [MIT License](LICENSE).

@@ -20,6 +20,7 @@ type ICategoriesService interface {
 	InsertCategory(parameter entity.Category) entity.Category
 	UpdateCategory(parameter entity.Category) (entity.Category, error)
 	DeleteCategory(categoryID int64) (int64, error)
+	API() entity.HealthResponse
 }
 
 // CategoriesService provides methods to manage and manipulate category data using the ICategoriesRepository abstraction.
@@ -32,6 +33,14 @@ func NewCategoriesService(repo repository.ICategoriesRepository) (*CategoriesSer
 	return &CategoriesService{
 		repo: repo,
 	}, nil
+}
+
+// API returns the health status of the Categories API as an entity.HealthResponse.
+func (s *CategoriesService) API() entity.HealthResponse {
+	return entity.HealthResponse{
+		Name:      "Categories API",
+		IsHealthy: true,
+	}
 }
 
 // GetAllCategories retrieves all categories from the repository and returns them as a slice of Category entities.

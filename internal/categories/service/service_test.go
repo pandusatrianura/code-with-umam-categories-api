@@ -2,141 +2,240 @@ package service
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/pandusatrianura/code-with-umam-categories-api/constants"
 	"github.com/pandusatrianura/code-with-umam-categories-api/internal/categories/entity"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-type MockRepository struct {
-	mock.Mock
+type mockRepository struct {
+	getAllCategoriesFunc func() []entity.Category
+	getCategoryByIDFunc  func(id int64) entity.Category
+	insertCategoryFunc   func(category entity.Category) entity.Category
+	updateCategoryFunc   func(category entity.Category) (entity.Category, error)
+	deleteCategoryFunc   func(id int64) (int64, error)
 }
 
-func (m *MockRepository) GetAllCategories() []entity.Category {
-	args := m.Called()
-	return args.Get(0).([]entity.Category)
+func (m *mockRepository) GetAllCategories() []entity.Category {
+	return m.getAllCategoriesFunc()
 }
 
-func (m *MockRepository) GetCategoryByID(categoryID int64) entity.Category {
-	args := m.Called(categoryID)
-	return args.Get(0).(entity.Category)
+func (m *mockRepository) GetCategoryByID(categoryID int64) entity.Category {
+	return m.getCategoryByIDFunc(categoryID)
 }
 
-func (m *MockRepository) InsertCategory(parameter entity.Category) entity.Category {
-	args := m.Called(parameter)
-	return args.Get(0).(entity.Category)
+func (m *mockRepository) InsertCategory(parameter entity.Category) entity.Category {
+	return m.insertCategoryFunc(parameter)
 }
 
-func (m *MockRepository) UpdateCategory(parameter entity.Category) (entity.Category, error) {
-	args := m.Called(parameter)
-	return args.Get(0).(entity.Category), args.Error(1)
+func (m *mockRepository) UpdateCategory(parameter entity.Category) (entity.Category, error) {
+	return m.updateCategoryFunc(parameter)
 }
 
-func (m *MockRepository) DeleteCategory(categoryID int64) (int64, error) {
-	args := m.Called(categoryID)
-	return args.Get(0).(int64), args.Error(1)
+func (m *mockRepository) DeleteCategory(categoryID int64) (int64, error) {
+	return m.deleteCategoryFunc(categoryID)
 }
 
-func TestGetAllCategories(t *testing.T) {
-	mockRepo := new(MockRepository)
-	service := &CategoriesService{repo: mockRepo}
-
-	mockCategories := []entity.Category{
-		{ID: 1, Name: "Category1", Description: "Description1"},
-		{ID: 2, Name: "Category2", Description: "Description2"},
+func TestNewCategoriesService(t *testing.T) {
+	repo := &mockRepository{}
+	svc, err := NewCategoriesService(repo)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
 	}
-	mockRepo.On("GetAllCategories").Return(mockCategories)
-
-	actual := service.GetAllCategories()
-	assert.Equal(t, mockCategories, actual)
-	mockRepo.AssertExpectations(t)
+	if svc.repo != repo {
+		t.Errorf("expected repo to be set")
+	}
 }
 
-func TestGetCategoryByID(t *testing.T) {
-	mockRepo := new(MockRepository)
-	service := &CategoriesService{repo: mockRepo}
-
-	t.Run("Valid ID", func(t *testing.T) {
-		expectedCategory := entity.Category{ID: 1, Name: "Category1", Description: "Description1"}
-		mockRepo.On("GetCategoryByID", int64(1)).Return(expectedCategory)
-
-		actual, err := service.GetCategoryByID(1)
-		assert.NoError(t, err)
-		assert.Equal(t, expectedCategory, actual)
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("Invalid ID", func(t *testing.T) {
-		mockRepo.On("GetCategoryByID", int64(2)).Return(entity.Category{})
-		actual, err := service.GetCategoryByID(2)
-		assert.Error(t, err)
-		assert.EqualError(t, err, constants.ErrCategoryNotFound)
-		assert.Equal(t, entity.Category{}, actual)
-		mockRepo.AssertExpectations(t)
-	})
+func TestCategoriesService_API(t *testing.T) {
+	svc := &CategoriesService{}
+	expected := entity.HealthResponse{
+		Name:      "Categories API",
+		IsHealthy: true,
+	}
+	got := svc.API()
+	if got != expected {
+		t.Errorf("expected %v, got %v", expected, got)
+	}
 }
 
-func TestInsertCategory(t *testing.T) {
-	mockRepo := new(MockRepository)
-	service := &CategoriesService{repo: mockRepo}
+func TestCategoriesService_GetAllCategories(t *testing.T) {
+	tests := []struct {
+		name     string
+		mockData []entity.Category
+		expected []entity.Category
+	}{
+		{
+			name:     "Success",
+			mockData: []entity.Category{{ID: 1, Name: "Cat 1"}},
+			expected: []entity.Category{{ID: 1, Name: "Cat 1"}},
+		},
+		{
+			name:     "Empty",
+			mockData: []entity.Category{},
+			expected: []entity.Category{},
+		},
+	}
 
-	newCategory := entity.Category{Name: "NewCategory", Description: "NewDescription"}
-	expectedCategory := entity.Category{ID: 1, Name: "NewCategory", Description: "NewDescription"}
-	mockRepo.On("InsertCategory", newCategory).Return(expectedCategory)
-
-	actual := service.InsertCategory(newCategory)
-	assert.Equal(t, expectedCategory, actual)
-	mockRepo.AssertExpectations(t)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &mockRepository{
+				getAllCategoriesFunc: func() []entity.Category {
+					return tt.mockData
+				},
+			}
+			svc := &CategoriesService{repo: repo}
+			got := svc.GetAllCategories()
+			if !reflect.DeepEqual(got, tt.expected) {
+				t.Errorf("expected %v, got %v", tt.expected, got)
+			}
+		})
+	}
 }
 
-func TestUpdateCategory(t *testing.T) {
-	mockRepo := new(MockRepository)
-	service := &CategoriesService{repo: mockRepo}
+func TestCategoriesService_GetCategoryByID(t *testing.T) {
+	tests := []struct {
+		name      string
+		id        int64
+		mockData  entity.Category
+		expected  entity.Category
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			name:     "Found",
+			id:       1,
+			mockData: entity.Category{ID: 1, Name: "Cat 1"},
+			expected: entity.Category{ID: 1, Name: "Cat 1"},
+		},
+		{
+			name:      "Not Found",
+			id:        99,
+			mockData:  entity.Category{},
+			expectErr: true,
+			errMsg:    constants.ErrCategoryNotFound,
+		},
+	}
 
-	t.Run("Valid Update", func(t *testing.T) {
-		updateCategory := entity.Category{ID: 1, Name: "UpdatedCategory", Description: "UpdatedDescription"}
-		mockRepo.On("UpdateCategory", updateCategory).Return(updateCategory, nil)
-
-		actual, err := service.UpdateCategory(updateCategory)
-		assert.NoError(t, err)
-		assert.Equal(t, updateCategory, actual)
-		mockRepo.AssertExpectations(t)
-	})
-
-	t.Run("Invalid ID", func(t *testing.T) {
-		updateCategory := entity.Category{ID: 2, Name: "InvalidCategory", Description: "InvalidDescription"}
-		mockRepo.On("UpdateCategory", updateCategory).Return(entity.Category{}, errors.New(constants.ErrCategoryNotFound))
-
-		actual, err := service.UpdateCategory(updateCategory)
-		assert.Error(t, err)
-		assert.EqualError(t, err, constants.ErrCategoryNotFound)
-		assert.Equal(t, entity.Category{}, actual)
-		mockRepo.AssertExpectations(t)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &mockRepository{
+				getCategoryByIDFunc: func(id int64) entity.Category {
+					return tt.mockData
+				},
+			}
+			svc := &CategoriesService{repo: repo}
+			got, err := svc.GetCategoryByID(tt.id)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("expectErr %v, got error %v", tt.expectErr, err)
+			}
+			if tt.expectErr && err.Error() != tt.errMsg {
+				t.Errorf("expected error message %v, got %v", tt.errMsg, err.Error())
+			}
+			if !tt.expectErr && !reflect.DeepEqual(got, tt.expected) {
+				t.Errorf("expected %v, got %v", tt.expected, got)
+			}
+		})
+	}
 }
 
-func TestDeleteCategory(t *testing.T) {
-	mockRepo := new(MockRepository)
-	service := &CategoriesService{repo: mockRepo}
+func TestCategoriesService_InsertCategory(t *testing.T) {
+	input := entity.Category{Name: "New"}
+	expected := entity.Category{ID: 1, Name: "New"}
 
-	t.Run("Valid Delete", func(t *testing.T) {
-		mockRepo.On("DeleteCategory", int64(1)).Return(int64(1), nil)
+	repo := &mockRepository{
+		insertCategoryFunc: func(c entity.Category) entity.Category {
+			return expected
+		},
+	}
+	svc := &CategoriesService{repo: repo}
+	got := svc.InsertCategory(input)
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("expected %v, got %v", expected, got)
+	}
+}
 
-		id, err := service.DeleteCategory(1)
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), id)
-		mockRepo.AssertExpectations(t)
-	})
+func TestCategoriesService_UpdateCategory(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     entity.Category
+		mockResp  entity.Category
+		mockErr   error
+		expected  entity.Category
+		expectErr bool
+	}{
+		{
+			name:     "Success",
+			input:    entity.Category{ID: 1, Name: "Updated"},
+			mockResp: entity.Category{ID: 1, Name: "Updated"},
+			expected: entity.Category{ID: 1, Name: "Updated"},
+		},
+		{
+			name:      "Error",
+			input:     entity.Category{ID: 99},
+			mockErr:   errors.New("update error"),
+			expectErr: true,
+		},
+	}
 
-	t.Run("Invalid ID", func(t *testing.T) {
-		mockRepo.On("DeleteCategory", int64(2)).Return(int64(0), errors.New(constants.ErrCategoryNotFound))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &mockRepository{
+				updateCategoryFunc: func(c entity.Category) (entity.Category, error) {
+					return tt.mockResp, tt.mockErr
+				},
+			}
+			svc := &CategoriesService{repo: repo}
+			got, err := svc.UpdateCategory(tt.input)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("expectErr %v, got %v", tt.expectErr, err)
+			}
+			if !tt.expectErr && !reflect.DeepEqual(got, tt.expected) {
+				t.Errorf("expected %v, got %v", tt.expected, got)
+			}
+		})
+	}
+}
 
-		id, err := service.DeleteCategory(2)
-		assert.Error(t, err)
-		assert.EqualError(t, err, constants.ErrCategoryNotFound)
-		assert.Equal(t, int64(0), id)
-		mockRepo.AssertExpectations(t)
-	})
+func TestCategoriesService_DeleteCategory(t *testing.T) {
+	tests := []struct {
+		name      string
+		id        int64
+		mockRows  int64
+		mockErr   error
+		expected  int64
+		expectErr bool
+	}{
+		{
+			name:     "Success",
+			id:       1,
+			mockRows: 1,
+			expected: 1,
+		},
+		{
+			name:      "Error",
+			id:        99,
+			mockErr:   errors.New("delete error"),
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &mockRepository{
+				deleteCategoryFunc: func(id int64) (int64, error) {
+					return tt.mockRows, tt.mockErr
+				},
+			}
+			svc := &CategoriesService{repo: repo}
+			got, err := svc.DeleteCategory(tt.id)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("expectErr %v, got %v", tt.expectErr, err)
+			}
+			if !tt.expectErr && got != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, got)
+			}
+		})
+	}
 }

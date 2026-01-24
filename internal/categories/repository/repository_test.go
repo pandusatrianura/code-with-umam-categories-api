@@ -1,149 +1,271 @@
 package repository
 
 import (
-	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/pandusatrianura/code-with-umam-categories-api/constants"
 	"github.com/pandusatrianura/code-with-umam-categories-api/internal/categories/entity"
 )
 
-func TestCategoriesRepository_GetAllCategories(t *testing.T) {
-	repo := &CategoriesRepository{}
-	expectedCategories := categoriesList
+func withCategories(t *testing.T, categories []entity.Category, fn func()) {
+	t.Helper()
+	original := append([]entity.Category(nil), categoriesList...)
+	categoriesList = append([]entity.Category(nil), categories...)
+	defer func() {
+		categoriesList = original
+	}()
+	fn()
+}
 
-	categories := repo.GetAllCategories()
-
-	if len(categories) != len(expectedCategories) {
-		t.Errorf("expected %d categories, got %d", len(expectedCategories), len(categories))
+func TestNewCategoriesRepository(t *testing.T) {
+	repo, err := NewCategoriesRepository()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	for i, category := range categories {
-		if category != expectedCategories[i] {
-			t.Errorf("expected category %+v, got %+v", expectedCategories[i], category)
-		}
+	if repo == nil {
+		t.Fatalf("expected repository instance")
 	}
 }
 
-func TestCategoriesRepository_GetCategoryByID(t *testing.T) {
-	repo := &CategoriesRepository{}
-
+func TestCategoriesRepository_GetAllCategories(t *testing.T) {
 	tests := []struct {
 		name       string
-		categoryID int64
-		expected   entity.Category
+		categories []entity.Category
 	}{
-		{"existing ID", 1, categoriesList[0]},
-		{"non-existing ID", 99, entity.Category{}},
+		{
+			name:       "empty",
+			categories: nil,
+		},
+		{
+			name: "some",
+			categories: []entity.Category{
+				{ID: 1, Name: "A", Description: "D1"},
+				{ID: 2, Name: "B", Description: "D2"},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := repo.GetCategoryByID(tt.categoryID)
-			if result != tt.expected {
-				t.Errorf("expected %+v, got %+v", tt.expected, result)
-			}
+			withCategories(t, tt.categories, func() {
+				repo := &CategoriesRepository{}
+				got := repo.GetAllCategories()
+				if !reflect.DeepEqual(got, tt.categories) {
+					t.Fatalf("expected %v, got %v", tt.categories, got)
+				}
+			})
+		})
+	}
+}
+
+func TestCategoriesRepository_GetCategoryByID(t *testing.T) {
+	tests := []struct {
+		name       string
+		categories []entity.Category
+		id         int64
+		want       entity.Category
+	}{
+		{
+			name: "found",
+			categories: []entity.Category{
+				{ID: 1, Name: "A", Description: "D1"},
+				{ID: 2, Name: "B", Description: "D2"},
+			},
+			id:   2,
+			want: entity.Category{ID: 2, Name: "B", Description: "D2"},
+		},
+		{
+			name:       "missing",
+			categories: []entity.Category{{ID: 1, Name: "A", Description: "D1"}},
+			id:         3,
+			want:       entity.Category{},
+		},
+		{
+			name:       "empty",
+			categories: nil,
+			id:         1,
+			want:       entity.Category{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			withCategories(t, tt.categories, func() {
+				repo := &CategoriesRepository{}
+				got := repo.GetCategoryByID(tt.id)
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Fatalf("expected %v, got %v", tt.want, got)
+				}
+			})
 		})
 	}
 }
 
 func TestCategoriesRepository_InsertCategory(t *testing.T) {
-	repo := &CategoriesRepository{}
-
 	tests := []struct {
-		name     string
-		input    entity.Category
-		validate func(entity.Category) error
+		name       string
+		categories []entity.Category
+		input      entity.Category
+		want       entity.Category
+		wantList   []entity.Category
 	}{
 		{
-			"new category with ID 0",
-			entity.Category{Name: "Books", Description: "Category for books"},
-			func(cat entity.Category) error {
-				if cat.ID <= 0 {
-					return fmt.Errorf("expected a valid ID, got %d", cat.ID)
-				}
-				if cat.Name != "Books" || cat.Description != "Category for books" {
-					return fmt.Errorf("unexpected category data: %+v", cat)
-				}
-				return nil
-			},
+			name:       "autoEmpty",
+			categories: nil,
+			input:      entity.Category{Name: "A", Description: "D1"},
+			want:       entity.Category{ID: 1, Name: "A", Description: "D1"},
+			wantList:   []entity.Category{{ID: 1, Name: "A", Description: "D1"}},
 		},
 		{
-			"new category with provided ID",
-			entity.Category{ID: 10, Name: "Toys", Description: "Category for toys"},
-			func(cat entity.Category) error {
-				if cat.ID != 10 {
-					return fmt.Errorf("expected ID 10, got %d", cat.ID)
-				}
-				if cat.Name != "Toys" || cat.Description != "Category for toys" {
-					return fmt.Errorf("unexpected category data: %+v", cat)
-				}
-				return nil
+			name: "autoExisting",
+			categories: []entity.Category{
+				{ID: 2, Name: "A", Description: "D1"},
+				{ID: 5, Name: "B", Description: "D2"},
 			},
+			input:    entity.Category{Name: "C", Description: "D3"},
+			want:     entity.Category{ID: 6, Name: "C", Description: "D3"},
+			wantList: []entity.Category{{ID: 2, Name: "A", Description: "D1"}, {ID: 5, Name: "B", Description: "D2"}, {ID: 6, Name: "C", Description: "D3"}},
+		},
+		{
+			name: "givenID",
+			categories: []entity.Category{
+				{ID: 1, Name: "A", Description: "D1"},
+			},
+			input:    entity.Category{ID: 10, Name: "B", Description: "D2"},
+			want:     entity.Category{ID: 10, Name: "B", Description: "D2"},
+			wantList: []entity.Category{{ID: 1, Name: "A", Description: "D1"}, {ID: 10, Name: "B", Description: "D2"}},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := repo.InsertCategory(tt.input)
-			if err := tt.validate(result); err != nil {
-				t.Error(err)
-			}
+			withCategories(t, tt.categories, func() {
+				repo := &CategoriesRepository{}
+				got := repo.InsertCategory(tt.input)
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Fatalf("expected %v, got %v", tt.want, got)
+				}
+				if !reflect.DeepEqual(categoriesList, tt.wantList) {
+					t.Fatalf("expected list %v, got %v", tt.wantList, categoriesList)
+				}
+			})
 		})
 	}
 }
 
 func TestCategoriesRepository_UpdateCategory(t *testing.T) {
-	repo := &CategoriesRepository{}
-
 	tests := []struct {
-		name        string
-		input       entity.Category
-		expectedErr error
+		name       string
+		categories []entity.Category
+		input      entity.Category
+		want       entity.Category
+		wantList   []entity.Category
+		wantErr    string
 	}{
 		{
-			"update existing category",
-			entity.Category{ID: 1, Name: "Updated Electronics", Description: "Updated description"},
-			nil,
+			name: "found",
+			categories: []entity.Category{
+				{ID: 1, Name: "A", Description: "D1"},
+				{ID: 2, Name: "B", Description: "D2"},
+			},
+			input:    entity.Category{ID: 2, Name: "BB", Description: "DD"},
+			want:     entity.Category{ID: 2, Name: "BB", Description: "DD"},
+			wantList: []entity.Category{{ID: 1, Name: "A", Description: "D1"}, {ID: 2, Name: "BB", Description: "DD"}},
 		},
 		{
-			"update non-existing category",
-			entity.Category{ID: 99, Name: "Non-existent", Description: "Description"},
-			fmt.Errorf(constants.ErrCategoryNotFound),
+			name: "missing",
+			categories: []entity.Category{
+				{ID: 1, Name: "A", Description: "D1"},
+			},
+			input:    entity.Category{ID: 2, Name: "B", Description: "D2"},
+			want:     entity.Category{},
+			wantList: []entity.Category{{ID: 1, Name: "A", Description: "D1"}},
+			wantErr:  constants.ErrCategoryNotFound,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := repo.UpdateCategory(tt.input)
-			if (err == nil) != (tt.expectedErr == nil) || (err != nil && err.Error() != tt.expectedErr.Error()) {
-				t.Errorf("expected error %+v, got %+v", tt.expectedErr, err)
-			}
+			withCategories(t, tt.categories, func() {
+				repo := &CategoriesRepository{}
+				got, err := repo.UpdateCategory(tt.input)
+				if tt.wantErr == "" && err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				if tt.wantErr != "" {
+					if err == nil {
+						t.Fatalf("expected error")
+					}
+					if err.Error() != tt.wantErr {
+						t.Fatalf("expected error %q, got %q", tt.wantErr, err.Error())
+					}
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Fatalf("expected %v, got %v", tt.want, got)
+				}
+				if !reflect.DeepEqual(categoriesList, tt.wantList) {
+					t.Fatalf("expected list %v, got %v", tt.wantList, categoriesList)
+				}
+			})
 		})
 	}
 }
 
 func TestCategoriesRepository_DeleteCategory(t *testing.T) {
-	repo := &CategoriesRepository{}
-
 	tests := []struct {
-		name        string
-		categoryID  int64
-		expectedID  int64
-		expectedErr error
+		name       string
+		categories []entity.Category
+		id         int64
+		wantID     int64
+		wantList   []entity.Category
+		wantErr    string
 	}{
-		{"delete existing category", 1, 1, nil},
-		{"delete non-existing category", 99, 0, fmt.Errorf(constants.ErrCategoryNotFound)},
+		{
+			name: "found",
+			categories: []entity.Category{
+				{ID: 1, Name: "A", Description: "D1"},
+				{ID: 2, Name: "B", Description: "D2"},
+			},
+			id:       1,
+			wantID:   1,
+			wantList: []entity.Category{{ID: 2, Name: "B", Description: "D2"}},
+		},
+		{
+			name: "missing",
+			categories: []entity.Category{
+				{ID: 1, Name: "A", Description: "D1"},
+			},
+			id:       2,
+			wantID:   0,
+			wantList: []entity.Category{{ID: 1, Name: "A", Description: "D1"}},
+			wantErr:  constants.ErrCategoryNotFound,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := repo.DeleteCategory(tt.categoryID)
-			if id != tt.expectedID {
-				t.Errorf("expected ID %d, got %d", tt.expectedID, id)
-			}
-			if (err == nil) != (tt.expectedErr == nil) || (err != nil && err.Error() != tt.expectedErr.Error()) {
-				t.Errorf("expected error %+v, got %+v", tt.expectedErr, err)
-			}
+			withCategories(t, tt.categories, func() {
+				repo := &CategoriesRepository{}
+				gotID, err := repo.DeleteCategory(tt.id)
+				if tt.wantErr == "" && err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				if tt.wantErr != "" {
+					if err == nil {
+						t.Fatalf("expected error")
+					}
+					if err.Error() != tt.wantErr {
+						t.Fatalf("expected error %q, got %q", tt.wantErr, err.Error())
+					}
+				}
+				if gotID != tt.wantID {
+					t.Fatalf("expected id %d, got %d", tt.wantID, gotID)
+				}
+				if !reflect.DeepEqual(categoriesList, tt.wantList) {
+					t.Fatalf("expected list %v, got %v", tt.wantList, categoriesList)
+				}
+			})
 		})
 	}
 }

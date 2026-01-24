@@ -26,7 +26,39 @@ func NewCategoriesHandler(service service.ICategoriesService) (*CategoriesHandle
 	return delegate, nil
 }
 
-// GetAllCategories handles the HTTP request to retrieve all category records and sends a successful JSON response.
+// HealthCheck godoc
+// @Summary Get health status of categories API
+// @Description Memeriksa status kesehatan API kategori
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/categories/health [get]
+func (d *CategoriesHandler) API(w http.ResponseWriter, r *http.Request) {
+	var result json_wrapper.APIResponse
+	svcHealthCheckResult := d.service.API()
+
+	if svcHealthCheckResult.IsHealthy {
+		result.Code = constants.SuccessCode
+		result.Message = fmt.Sprintf("%s is healthy", svcHealthCheckResult.Name)
+		json_wrapper.WriteJSONResponse(w, http.StatusOK, result)
+	} else {
+		result.Code = constants.ErrorCode
+		result.Message = fmt.Sprintf("%s is not healthy", svcHealthCheckResult.Name)
+		json_wrapper.WriteJSONResponse(w, http.StatusServiceUnavailable, result)
+	}
+
+	return
+}
+
+// GetAllCategories godoc
+// @Summary Get all categories
+// @Description Mengambil semua data kategori
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/categories/ [get]
 func (d *CategoriesHandler) GetAllCategories(w http.ResponseWriter, r *http.Request) {
 	var result json_wrapper.APIResponse
 
@@ -40,7 +72,17 @@ func (d *CategoriesHandler) GetAllCategories(w http.ResponseWriter, r *http.Requ
 	return
 }
 
-// GetCategoryByID retrieves a specific category by its ID, handles errors, and sends an appropriate HTTP response.
+// GetCategoryByID godoc
+// @Summary Get category by ID
+// @Description Mengambil kategori berdasarkan ID
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param id path int true "Category ID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/v1/categories/{id} [get]
 func (d *CategoriesHandler) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
 	var result json_wrapper.APIResponse
 
@@ -68,7 +110,16 @@ func (d *CategoriesHandler) GetCategoryByID(w http.ResponseWriter, r *http.Reque
 	return
 }
 
-// InsertCategory handles the HTTP POST request for creating a new category by parsing the request body into a Category entity.
+// InsertCategory godoc
+// @Summary Create a new category
+// @Description Membuat kategori baru
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param category body entity.Category true "Category Data"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /api/v1/categories [post]
 func (d *CategoriesHandler) InsertCategory(w http.ResponseWriter, r *http.Request) {
 	var result json_wrapper.APIResponse
 
@@ -89,7 +140,17 @@ func (d *CategoriesHandler) InsertCategory(w http.ResponseWriter, r *http.Reques
 	return
 }
 
-// UpdateCategory handles HTTP PUT requests to update an existing category by its ID with the provided data.
+// UpdateCategory godoc
+// @Summary Update category
+// @Description Update kategori berdasarkan ID
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param id path int true "Category ID"
+// @Param category body entity.Category true "Category Data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /api/v1/categories/{id} [put]
 func (d *CategoriesHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	var result json_wrapper.APIResponse
 
@@ -127,7 +188,15 @@ func (d *CategoriesHandler) UpdateCategory(w http.ResponseWriter, r *http.Reques
 	return
 }
 
-// DeleteCategory handles HTTP requests to delete a category by its ID, responding with success or error details.
+// DeleteCategory godoc
+// @Summary Delete category
+// @Description Menghapus kategori berdasarkan ID
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param id path int true "Category ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/categories/{id} [delete]
 func (d *CategoriesHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	var result json_wrapper.APIResponse
 

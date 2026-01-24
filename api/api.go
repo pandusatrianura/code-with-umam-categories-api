@@ -6,9 +6,6 @@ import (
 
 	route "github.com/pandusatrianura/code-with-umam-categories-api/api/router"
 
-	HealthCheckHandler "github.com/pandusatrianura/code-with-umam-categories-api/internal/healthcheck/delivery/http"
-	HealthCheckService "github.com/pandusatrianura/code-with-umam-categories-api/internal/healthcheck/service"
-
 	CategoriesHandler "github.com/pandusatrianura/code-with-umam-categories-api/internal/categories/delivery/http"
 	CategoriesRepository "github.com/pandusatrianura/code-with-umam-categories-api/internal/categories/repository"
 	CategoriesService "github.com/pandusatrianura/code-with-umam-categories-api/internal/categories/service"
@@ -27,16 +24,6 @@ func NewAPIServer(addr string) *Server {
 // Run starts the server, initializes dependencies, registers routes, and listens for incoming HTTP requests.
 func (s *Server) Run() error {
 
-	healthCheckService, err := HealthCheckService.NewHealthCheckService()
-	if err != nil {
-		panic(err)
-	}
-
-	healthCheckHandler, err := HealthCheckHandler.NewHealthCheckHandler(healthCheckService)
-	if err != nil {
-		panic(err)
-	}
-
 	categoriesRepo, err := CategoriesRepository.NewCategoriesRepository()
 	if err != nil {
 		panic(err)
@@ -52,7 +39,7 @@ func (s *Server) Run() error {
 		panic(err)
 	}
 
-	r := route.NewRouter(healthCheckHandler, categoriesHandler)
+	r := route.NewRouter(categoriesHandler)
 	routes := r.RegisterRoutes()
 	router := http.NewServeMux()
 	router.Handle("/api/v1/", http.StripPrefix("/api/v1", routes))
