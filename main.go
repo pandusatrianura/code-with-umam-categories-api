@@ -28,5 +28,5 @@ func main() {
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Server started successfully on port ", port)
+	fmt.Println("Server started successfully on PORT ", port)
 }
