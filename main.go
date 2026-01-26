@@ -24,9 +24,9 @@ func main() {
 
 	port := os.Getenv("PORT")
 
+	fmt.Println("Server started successfully on PORT ", port)
 	server := api.NewAPIServer(fmt.Sprintf(":%s", port))
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Server started successfully on PORT ", port)
 }
