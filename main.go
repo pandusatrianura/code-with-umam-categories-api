@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/pandusatrianura/code-with-umam-categories-api/api"
 )
 
@@ -13,8 +16,17 @@ import (
 
 // main starts the API server on the specified address and handles errors during its execution.
 func main() {
-	server := api.NewAPIServer(":8000")
+	// Load the .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %s", err)
+	}
+
+	port := os.Getenv("PORT")
+
+	server := api.NewAPIServer(fmt.Sprintf(":%s", port))
 	if err := server.Run(); err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("Server started successfully on port ", port)
 }
